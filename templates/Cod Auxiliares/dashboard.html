@@ -1,0 +1,85 @@
+{% extends 'layout.html' %}
+{% block content %}
+<!-- GRÁFICO DE LINHA - AÇÕES DE MERCADO / EVOLUÇÃO -->
+<div class="mt-5">
+  <h3 class="mb-3 text-white"><i class="bi bi-activity"></i> Evolução Diária de Contatos</h3>
+  <div class="bg-dark p-4 rounded-4">
+    <canvas id="lineChartContatos" height="100"></canvas>
+  </div>
+</div>
+
+<!-- Chart.js -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+  const ctxLine = document.getElementById('lineChartContatos').getContext('2d');
+
+  const dias = {{ dias|tojson }};
+  const primeiroContato = {{ primeiro|tojson }};
+  const segundoContato = {{ segundo|tojson }};
+  const finalizadoContato = {{ finalizado|tojson }};
+
+  new Chart(ctxLine, {
+    type: 'line',
+    data: {
+      labels: dias,
+      datasets: [
+        {
+          label: '1º Contato',
+          data: primeiroContato,
+          borderColor: '#17a2b8',
+          backgroundColor: 'transparent',
+          borderWidth: 2,
+          pointRadius: 4,
+          pointBackgroundColor: '#17a2b8',
+          tension: 0.3
+        },
+        {
+          label: '2º Contato',
+          data: segundoContato,
+          borderColor: '#ffc107',
+          backgroundColor: 'transparent',
+          borderWidth: 2,
+          pointRadius: 4,
+          pointBackgroundColor: '#ffc107',
+          tension: 0.3
+        },
+        {
+          label: 'Finalizados',
+          data: finalizadoContato,
+          borderColor: '#28a745',
+          backgroundColor: 'transparent',
+          borderWidth: 2,
+          pointRadius: 4,
+          pointBackgroundColor: '#28a745',
+          tension: 0.3
+        }
+      ]
+    },
+    options: {
+      responsive: true,
+      plugins: {
+        legend: {
+          labels: {
+            color: 'white',
+            font: {
+              size: 14
+            }
+          }
+        }
+      },
+      scales: {
+        x: {
+          ticks: { color: 'white' },
+          grid: { color: '#333' }
+        },
+        y: {
+          beginAtZero: true,
+          ticks: { color: 'white' },
+          grid: { color: '#333' }
+        }
+      }
+    }
+  });
+</script>
+
+{% endblock %}

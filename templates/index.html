@@ -1,0 +1,394 @@
+{% extends 'layout.html' %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4 p-3 rounded" style="background-color: #1a1a2e; box-shadow: 0 0 10px rgba(0,255,255,0.2);">
+    <div>
+        <h2 class="text-info fw-bold m-0">🚀 Central de Gestão de Leads</h2>
+        {% if usuario_logado %}
+            <p class="text-light m-0">Consultor logado: <span class="fw-semibold text-warning">{{ usuario_logado }}</span></p>
+        {% endif %}
+    </div>
+
+    <div class="d-flex gap-2">
+        <a href="/dashboard-completo" class="btn btn-outline-info">📊 Dashboard</a>
+        <a href="/logout" class="btn btn-danger">🚪 Sair</a>
+    </div>
+</div>
+
+
+
+<!-- CABEÇALHO DOS FILTROS -->
+<div class="mb-2">
+    <h5 class="text-white">🎯 Selecione um Filtro</h5>
+</div>
+
+
+<!-- FILTROS COM BORDA E FUNDO -->
+<div class="p-3 mb-4 rounded" style="background-color: #1a1a2e; box-shadow: 0 0 10px rgba(0,255,255,0.2);">
+    <form method="get" class="row g-3">
+        {% for col in colunas if not (col == 'Consultor' and tipo_usuario == 'consultor') %}
+            <div class="col-md-3 col-lg-2">
+                <label for="filter_{{ col }}" class="form-label text-white">{{ col }}</label>
+                {% if col in ['Nome', 'Email', 'Telefone', 'Segundo_contato', 'Finalizado'] %}
+                    <input type="text" class="form-control" id="filter_{{ col }}" name="{{ col.lower() }}" value="{{ filtros[col] }}" placeholder="Digite {{ col }}" />
+                {% else %}
+                    <select class="form-select" id="filter_{{ col }}" name="{{ col.lower() }}">
+                        <option value="">-- Todos --</option>
+                        {% for val in valores_distintos[col] %}
+                            <option value="{{ val }}" {% if filtros[col] == val %}selected{% endif %}>{{ val }}</option>
+                        {% endfor %}
+                    </select>
+                {% endif %}
+            </div>
+        {% endfor %}
+
+        <div class="col-md-3 col-lg-2 d-flex align-items-end">
+            <button type="submit" class="btn btn-primary w-100">Filtrar</button>
+        </div>
+        <div class="col-md-3 col-lg-2 d-flex align-items-end">
+            <a href="/" class="btn btn-secondary w-100">Limpar Filtros</a>
+        </div>
+    </form>
+</div>
+
+
+<!-- TABELA -->
+<form method="post" action="/alterar_massa">
+    <div class="table-responsive mb-4">
+      <table class="table table-striped table-hover align-middle w-100">
+        <thead>
+          <tr>
+            <th><input type="checkbox" id="checkAll" /></th>
+            {% for col in colunas %}
+              <th>{{ col }}</th>
+            {% endfor %}
+            <th>Ações</th> <!-- Nova coluna -->
+          </tr>
+        </thead>
+        <tbody>
+          {% for contato in contatos %}
+          <tr>
+            <td><input type="checkbox" class="contato-check" name="contato_ids" value="{{ contato['id'] }}" /></td>
+            {% for col in colunas %}
+              <td>{{ contato[col] }}</td>
+            {% endfor %}
+            <td>
+              {% if session.get("tipo") == "admin" %}
+                <a href="{{ url_for('editar_contato', id=contato['id']) }}" class="btn btn-sm btn-warning">✏️ Editar</a>
+              {% endif %}
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </form>
+  
+    <!-- PAGINAÇÃO -->
+    <nav aria-label="Navegação de páginas" class="mb-3">
+        <ul class="pagination justify-content-center">
+            {% set query_params = request.args.to_dict().copy() %}
+            {% set _ = query_params.pop('pagina', None) %}
+            <li class="page-item {% if pagina <= 1 %}disabled{% endif %}">
+                <a class="page-link" href="?{% for key, val in query_params.items() %}{{ key }}={{ val | urlencode }}&{% endfor %}pagina={{ pagina - 1 }}">Anterior</a>
+            </li>
+            {% set start_page = pagina - 2 if pagina - 2 > 0 else 1 %}
+            {% set end_page = start_page + 4 %}
+            {% if end_page > total_paginas %}
+                {% set end_page = total_paginas %}
+                {% set start_page = end_page - 4 if end_page - 4 > 0 else 1 %}
+            {% endif %}
+            {% for p in range(start_page, end_page + 1) %}
+            <li class="page-item {% if p == pagina %}active{% endif %}">
+                <a class="page-link" href="?{% for key, val in query_params.items() %}{{ key }}={{ val | urlencode }}&{% endfor %}pagina={{ p }}">{{ p }}</a>
+            </li>
+            {% endfor %}
+            <li class="page-item {% if pagina >= total_paginas %}disabled{% endif %}">
+                <a class="page-link" href="?{% for key, val in query_params.items() %}{{ key }}={{ val | urlencode }}&{% endfor %}pagina={{ pagina + 1 }}">Próximo</a>
+            </li>
+        </ul>
+    </nav>
+
+    <!-- SOLICITAR BASE -->
+<h3 class="mt-5">SOLICITAR BASE</h3>
+<form method="post" action="/alterar_massa"> <!-- AQUI ESTAVA FALTANDO -->
+  <div class="row g-3 align-items-end mb-3">
+    <div class="col-md-3">
+      <label for="coluna" class="form-label">Coluna para alteração</label>
+      <select class="form-select" id="coluna" name="coluna" required>
+        <option value="Consultor" selected>Consultor</option>
+      </select>
+    </div>
+
+    <div class="col-md-3">
+      <label for="select_base" class="form-label">Escolha a Base</label>
+      <select class="form-select" id="select_base" name="base_filtro" required>
+        <option value="">-- Selecione uma base --</option>
+        {% for base in bases_distintas %}
+          <option value="{{ base }}">{{ base }}</option>
+        {% endfor %}
+      </select>
+    </div>
+
+    <div class="col-md-3">
+      <label for="valor_existente" class="form-label">Escolha um valor existente</label>
+      <select class="form-select" id="valor_existente" name="valor_filtro" required>
+        <option value="">-- Selecione ou digite novo valor --</option>
+        {% for valor in valores_distintos['Consultor'] %}
+          <option value="{{ valor }}">{{ valor }}</option>
+        {% endfor %}
+      </select>
+    </div>
+
+    <div class="col-md-2">
+      <label for="quantidade" class="form-label">Quantidade</label>
+      <input type="number" min="1" max="{{ total_contatos }}" class="form-control" id="quantidade" name="quantidade" value="{{ total_contatos }}" required />
+    </div>
+
+    <div class="col-md-6">
+      <label for="solicitante" class="form-label">Solicitante (Novo Consultor)</label>
+      <select class="form-select" id="solicitante" name="consultor_novo" required>
+        {% if tipo_usuario == 'consultor' %}
+          <option value="{{ usuario_logado }}">{{ usuario_logado }}</option>
+        {% else %}
+          {% for c in consultors %}
+            <option value="{{ c }}">{{ c }}</option>
+          {% endfor %}
+        {% endif %}
+      </select>
+    </div>
+
+    <div class="col-md-2">
+      <label class="form-label d-block">&nbsp;</label>
+      <button type="submit" class="btn btn-success w-100">Alterar</button>
+    </div>
+  </div>
+</form>
+<hr class="my-5" />
+
+
+<!-- EDITAR BASE -->
+<!-- 🔧 FORMULÁRIO DE ALTERAÇÃO DE STATUS EM MASSA -->
+<form method="POST" action="/alterar_status_massa" class="row g-3 mb-5">
+
+    <!-- Filtros aplicados (campos escondidos) -->
+    {% for col, val in filtros.items() if val %}
+      <input type="hidden" name="filtro_{{ col }}" value="{{ val }}">
+    {% endfor %}
+  
+    <!-- Campo novo de status -->
+    <div class="col-md-3">
+      <label for="status_novo" class="form-label">Alterar Status Aluno</label>
+      <select id="status_novo" name="status_novo" class="form-select">
+        <option value="">-- Selecione o novo status --</option>
+        <option value="Em Negociação">Em Negociação</option>
+        <option value="Já é Aluno">Já é Aluno</option>
+        <option value="Localização">Localização</option>
+        <option value="Preço">Preço</option>
+        <option value="Matriculado">Matriculado</option>
+        <option value="Visualizou e Não Respondeu">Visualizou e Não Respondeu</option>
+        <option value="Dados Incorreto">Dados Incorreto</option>
+        <option value="Retirar da Base">Retirar da Base</option>
+      </select>
+    </div>
+  
+    <!-- Primeiro Contato -->
+    <div class="col-md-3">
+      <label for="primeiro_contato_novo" class="form-label">Alterar Primeiro Contato</label>
+      <input type="text" id="primeiro_contato_novo" name="primeiro_contato_novo" class="form-control" placeholder="Ex: 2025-06-03" />
+    </div>
+  
+    <!-- Segundo Contato -->
+    <div class="col-md-3">
+      <label for="segundo_contato_novo" class="form-label">Alterar Segundo Contato</label>
+      <input type="text" id="segundo_contato_novo" name="segundo_contato_novo" class="form-control" placeholder="Ex: 2025-06-10" />
+    </div>
+  
+    <!-- Finalizado -->
+    <div class="col-md-3">
+      <label for="finalizado_novo" class="form-label">Alterar Finalizado</label>
+      <input type="text" id="finalizado_novo" name="finalizado_novo" class="form-control" placeholder="Ex: Sim / Não" />
+    </div>
+  
+    <!-- Se for admin, pode alterar consultor -->
+    {% if session['tipo'] == 'admin' %}
+    <div class="col-md-3">
+      <label for="consultor_novo" class="form-label">Alterar Consultor</label>
+      <select id="consultor_novo" name="consultor_novo" class="form-select">
+        <option value="">-- Selecione o novo consultor --</option>
+        {% for nome in todosDados.consultores %}
+          <option value="{{ nome }}">{{ nome }}</option>
+        {% endfor %}
+      </select>
+    </div>
+    {% endif %}
+  
+    <!-- Botão -->
+    <div class="col-md-12">
+      {% if session['tipo'] == 'admin' %}
+        <button type="submit" class="btn btn-primary">Alterar Status</button>
+      {% else %}
+        <button type="submit" class="btn btn-primary" id="btn-alterar" disabled>Alterar Status</button>
+      {% endif %}
+    </div>
+</form>
+  
+    
+    <script>
+    document.addEventListener('DOMContentLoaded', function () {
+        const status = document.getElementById("status_novo");
+        const primeiro = document.getElementById("primeiro_contato_novo");
+        const segundo = document.getElementById("segundo_contato_novo");
+        const finalizado = document.getElementById("finalizado_novo");
+        const botao = document.getElementById("btn-alterar");
+    
+        function verificarCampos() {
+            if (status.value || primeiro.value || segundo.value || finalizado.value) {
+                botao.disabled = false;
+            } else {
+                botao.disabled = true;
+            }
+        }
+    
+        status.addEventListener("input", verificarCampos);
+        primeiro.addEventListener("input", verificarCampos);
+        segundo.addEventListener("input", verificarCampos);
+        finalizado.addEventListener("input", verificarCampos);
+    });
+    </script>
+    
+
+
+<h3>Copiar Contatos Filtrados</h3>
+<div class="row mb-4">
+    <!-- Telefones -->
+    <div class="col-md-4">
+        <label for="telefones_filtrados" class="form-label">📱 Telefones filtrados</label>
+        <textarea id="telefones_filtrados" class="form-control" rows="5" readonly>{{ telefones_filtrados | join('\n') }}</textarea>
+        <button class="btn btn-outline-primary mt-2 w-100" onclick="copiarTelefones()">Copiar Telefones</button>
+    </div>
+
+    <!-- Emails -->
+    <div class="col-md-4">
+        <label for="emails_filtrados" class="form-label">📧 Emails filtrados</label>
+        <textarea id="emails_filtrados" class="form-control" rows="5" readonly>{{ emails_filtrados | join('\n') }}</textarea>
+        <button class="btn btn-outline-success mt-2 w-100" onclick="copiarEmails()">Copiar Emails</button>
+    </div>
+
+    <!-- Nomes -->
+    <div class="col-md-4">
+        <label for="nomes_filtrados" class="form-label">👤 Nomes filtrados</label>
+        <textarea id="nomes_filtrados" class="form-control" rows="5" readonly>{{ nomes_filtrados | join('\n') }}</textarea>
+        <button class="btn btn-outline-secondary mt-2 w-100" onclick="copiarNomes()">Copiar Nomes</button>
+    </div>
+</div>
+
+
+<script>
+function copiarTelefones() {
+    const textarea = document.getElementById('telefones_filtrados');
+    textarea.select();
+    document.execCommand('copy');
+    alert('Telefones copiados!');
+}
+
+</script>
+
+
+<script>
+function copiarEmails() {
+    const textarea = document.getElementById('emails_filtrados');
+    textarea.select();
+    document.execCommand('copy');
+    alert('Emails copiados!');
+}
+</script>
+
+{% if tipo_usuario == 'admin' %}
+    <!-- IMPORTAÇÃO -->
+    <h3>Importar contatos CSV</h3>
+    <form method="post" action="/importar" enctype="multipart/form-data" class="mb-4">
+        <input type="file" name="arquivo_csv" accept=".csv" required />
+        <button type="submit" class="btn btn-primary">Importar</button>
+    </form>
+
+    <!-- EXPORTAÇÃO -->
+    <a href="/exportar?{% for col in colunas %}{% if filtros[col] %}{{ col.lower() }}={{ filtros[col] | urlencode }}&{% endif %}{% endfor %}" class="btn btn-secondary mb-4">
+        Exportar contatos filtrados
+    </a>
+
+    <!-- EXCLUIR BASE -->
+    <h3>Excluir Base</h3>
+    <form method="post" action="/excluir_base" onsubmit="return confirm('Tem certeza que deseja excluir esta base?');" class="row g-2 align-items-end mb-4">
+        <div class="col-md-4">
+            <label for="base_excluir" class="form-label">Selecione a base</label>
+            <select name="base_excluir" id="base_excluir" class="form-select" required>
+                <option value="">-- Escolha a base --</option>
+                {% for base in bases_distintas %}
+                    <option value="{{ base }}">{{ base }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="col-md-2">
+            <label class="form-label d-block">&nbsp;</label>
+            <button type="submit" class="btn btn-danger w-100">Excluir Base</button>
+        </div>
+    </form>
+
+    <!-- RESETAR BANCO -->
+    <form action="/resetar-base" method="POST" onsubmit="return confirm('Tem certeza que deseja resetar toda a base? Esta ação não pode ser desfeita.');">
+        <button type="submit" style="font-size: 14px; color: #ff4d4d; background-color: transparent; border: 1px solid #ff4d4d; padding: 6px 12px; border-radius: 5px; text-decoration: none; cursor: pointer; transition: 0.3s;">
+            🗑️ Resetar Base
+        </button>
+    </form>
+
+    <!-- REMOVER DUPLICADOS -->
+    <form action="/remover_duplicados" method="post" style="display:inline;">
+        <button type="submit" style="padding: 6px 12px; background-color: #444; color: #fff; border: none; border-radius: 5px; cursor: pointer;">
+            Remover Duplicados
+        </button>
+    </form>
+
+    <!-- ADICIONAR CONTATO -->
+    <div style="margin-bottom: 20px; display: flex; justify-content: space-between; align-items: center;">
+        <a href="{{ url_for('adicionar_contato') }}" class="btn btn-outline-light mb-3">➕ Adicionar Contato</a>
+    </div>
+{% endif %}
+
+
+
+    <script>
+    const selectValorExistente = document.getElementById('valor_existente');
+    const valoresDistintos = {{ valores_distintos | tojson }};
+    const tipoUsuario = "{{ tipo_usuario }}";
+
+    function popularValoresExistentes() {
+    let valores = [];
+
+    // Sempre trabalhar com os valores da coluna "Consultor"
+    const valoresConsultor = valoresDistintos["Consultor"] || [];
+
+    if (tipoUsuario === "admin") {
+        valores = valoresConsultor;
+    } else {
+        // Para consultores, só mostrar "Base Disponível"
+        if (valoresConsultor.includes("Base Disponível")) {
+            valores = ["Base Disponível"];
+        }
+    }
+
+    // Atualizar o select com os valores filtrados
+    selectValorExistente.innerHTML = '<option value="">-- Selecione ou digite novo valor --</option>';
+    valores.forEach(v => {
+        const opt = document.createElement('option');
+        opt.value = v;
+        opt.textContent = v;
+        selectValorExistente.appendChild(opt);
+    });
+    }
+
+    window.addEventListener('load', popularValoresExistentes);
+    </script>
+{% endblock %}
+
+

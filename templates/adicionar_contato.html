@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+  <meta charset="UTF-8">
+  <title>Adicionar Contato</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+</head>
+<body style="background-color:#0d0d1a; color:#fff; padding: 30px;">
+
+  <div class="container">
+    <h2 class="mb-4">Adicionar Novo Contato</h2>
+    <form method="post" action="{{ url_for('adicionar_contato') }}" class="row g-3">
+      
+      <div class="col-md-6">
+        <label class="form-label">Nome</label>
+        <input type="text" name="nome" class="form-control" required>
+      </div>
+      
+      <div class="col-md-6">
+        <label class="form-label">Telefone</label>
+        <input type="text" name="telefone" class="form-control" required>
+      </div>
+
+      <div class="col-md-6">
+        <label class="form-label">Email</label>
+        <input type="email" name="email" class="form-control">
+      </div>
+
+      <div class="col-md-6">
+        <label class="form-label">Base</label>
+        <select name="base" class="form-select">
+          <option value="">-- Selecione --</option>
+          {% for b in bases %}
+            <option value="{{ b }}">{{ b }}</option>
+          {% endfor %}
+        </select>
+      </div>
+
+      <div class="col-md-6">
+        <label class="form-label">Base Disponibilizada</label>
+        <select name="base_disponibilizada" class="form-select">
+          <option value="">-- Selecione --</option>
+          {% for bd in bases_disponiveis %}
+            <option value="{{ bd }}">{{ bd }}</option>
+          {% endfor %}
+        </select>
+      </div>
+
+      <div class="col-md-6">
+        <label class="form-label">Consultor</label>
+        <select name="consultor" class="form-select">
+          <option value="">-- Selecione --</option>
+          {% for c in consultores %}
+            <option value="{{ c }}">{{ c }}</option>
+          {% endfor %}
+        </select>
+      </div>
+
+      <div class="col-md-6">
+        <label class="form-label">Status do Aluno</label>
+        <select name="status_aluno" class="form-select">
+          <option value="">-- Selecione --</option>
+          {% for status in status_aluno %}
+            <option value="{{ status }}">{{ status }}</option>
+          {% endfor %}
+        </select>
+      </div>
+
+      <div class="col-md-6">
+        <label class="form-label">Primeiro Contato</label>
+        <input type="text" name="primeiro_contato" class="form-control" placeholder="dd/mm/aaaa">
+      </div>
+
+      <div class="col-md-6">
+        <label class="form-label">Segundo Contato</label>
+        <input type="text" name="segundo_contato" class="form-control" placeholder="dd/mm/aaaa">
+      </div>
+
+      <div class="col-md-6">
+        <label class="form-label">Finalizado</label>
+        <select name="finalizado" class="form-select">
+          <option value="">--</option>
+          {% for f in finalizado %}
+            <option value="{{ f }}">{{ f }}</option>
+          {% endfor %}
+        </select>
+      </div>
+
+      <div class="col-12 mt-4">
+        <button type="submit" class="btn btn-success">Salvar Contato</button>
+        <a href="{{ url_for('index') }}" class="btn btn-secondary ms-2">Voltar</a>
+        
+
+      </div>
+
+    </form>
+
+    
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

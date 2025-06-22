@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+<meta charset="utf-8"/>
+<title>Dashboard Interativo Completo</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<style>
+  body {
+    background-color: #0d0d1a;
+    color: #ffffff;
+    font-family: Arial, sans-serif;
+    margin: 0;
+    padding: 20px;
+  }
+  .filtro {
+    margin-bottom: 20px;
+  }
+  select, input[type="text"] {
+    padding: 8px;
+    border-radius: 5px;
+    background-color: #1a1a2e;
+    color: #fff;
+    border: none;
+    margin-right: 10px;
+  }
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    background-color: #1a1a2e;
+    margin-top: 20px;
+  }
+  th, td {
+    padding: 10px;
+    border: 1px solid #333;
+    text-align: left;
+  }
+  th {
+    background-color: #12122b;
+    color: #00e0ff;
+  }
+  tr:hover {
+    background-color: #292947;
+  }
+  .btn {
+    text-decoration: none;
+    background-color: #00bfa6;
+    color: white;
+    padding: 10px 20px;
+    border-radius: 8px;
+    font-weight: bold;
+    border: none;
+    cursor: pointer;
+  }
+</style>
+</head>
+<body>
+
+<h2>Dashboard com Filtros</h2>
+
+<div class="filtro">
+  <input type="text" id="filtroNome" placeholder="Filtrar por Nome">
+  <input type="text" id="filtroTelefone" placeholder="Filtrar por Telefone">
+  <input type="text" id="filtroEmail" placeholder="Filtrar por Email">
+  <input type="text" id="filtroBase" placeholder="Filtrar por Base">
+  <input type="text" id="filtroBaseDisp" placeholder="Filtrar por Base Disponibilizada">
+  <input type="text" id="filtroConsultor" placeholder="Filtrar por Consultor">
+  <input type="text" id="filtroStatus" placeholder="Filtrar por Status">
+</div>
+
+<table id="tabelaContatos">
+  <thead>
+    <tr>
+      <th>Nome</th>
+      <th>Telefone</th>
+      <th>Email</th>
+      <th>Base</th>
+      <th>Base Disponibilizada</th>
+      <th>Consultor</th>
+      <th>Status</th>
+      <th>Primeiro Contato</th>
+      <th>Segundo Contato</th>
+      <th>Finalizado</th>
+    </tr>
+  </thead>
+  <tbody></tbody>
+</table>
+
+<div style="margin-top: 20px; display: flex; gap: 10px; align-items: center;">
+  <button onclick="paginaAnterior()" class="btn">◀ Anterior</button>
+  <span id="paginacaoInfo">Página 1</span>
+  <button onclick="proximaPagina()" class="btn">Próxima ▶</button>
+</div>
+
+<script>
+  const todosDados = {{ todosDados|tojson }};
+  let paginaAtual = 1;
+  const porPagina = 50;
+  let dadosFiltrados = [];
+
+  function aplicarFiltros() {
+    const nome = document.getElementById('filtroNome').value.toLowerCase();
+    const telefone = document.getElementById('filtroTelefone').value.toLowerCase();
+    const email = document.getElementById('filtroEmail').value.toLowerCase();
+    const base = document.getElementById('filtroBase').value.toLowerCase();
+    const baseDisp = document.getElementById('filtroBaseDisp').value.toLowerCase();
+    const consultor = document.getElementById('filtroConsultor').value.toLowerCase();
+    const status = document.getElementById('filtroStatus').value.toLowerCase();
+
+    dadosFiltrados = todosDados.filter(dado =>
+      dado.Nome.toLowerCase().includes(nome) &&
+      dado.Telefone.toLowerCase().includes(telefone) &&
+      dado.Email.toLowerCase().includes(email) &&
+      dado.Base.toLowerCase().includes(base) &&
+      dado.Base_disponibilizada.toLowerCase().includes(baseDisp) &&
+      dado.Consultor.toLowerCase().includes(consultor) &&
+      dado.Status_aluno.toLowerCase().includes(status)
+    );
+
+    paginaAtual = 1;
+    renderizarTabela();
+  }
+
+  function renderizarTabela() {
+    const corpoTabela = document.querySelector('#tabelaContatos tbody');
+    corpoTabela.innerHTML = '';
+
+    const inicio = (paginaAtual - 1) * porPagina;
+    const fim = inicio + porPagina;
+    const paginaDados = dadosFiltrados.slice(inicio, fim);
+
+    paginaDados.forEach(dado => {
+      const linha = `
+        <tr>
+          <td>${dado.Nome}</td>
+          <td>${dado.Telefone}</td>
+          <td>${dado.Email}</td>
+          <td>${dado.Base}</td>
+          <td>${dado.Base_disponibilizada}</td>
+          <td>${dado.Consultor}</td>
+          <td>${dado.Status_aluno}</td>
+          <td>${dado.Primeiro_contato}</td>
+          <td>${dado.Segundo_contato}</td>
+          <td>${dado.Finalizado}</td>
+        </tr>`;
+      corpoTabela.insertAdjacentHTML('beforeend', linha);
+    });
+
+    document.getElementById('paginacaoInfo').innerText = `Página ${paginaAtual} de ${Math.ceil(dadosFiltrados.length / porPagina)}`;
+  }
+
+  function proximaPagina() {
+    if (paginaAtual * porPagina < dadosFiltrados.length) {
+      paginaAtual++;
+      renderizarTabela();
+    }
+  }
+
+  function paginaAnterior() {
+    if (paginaAtual > 1) {
+      paginaAtual--;
+      renderizarTabela();
+    }
+  }
+
+  document.querySelectorAll('input').forEach(input => {
+    input.addEventListener('input', aplicarFiltros);
+  });
+
+  // Inicializar
+  dadosFiltrados = todosDados;
+  renderizarTabela();
+</script>
+
+</body>
+</html>

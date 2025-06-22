@@ -1,0 +1,22 @@
+{% extends 'layout.html' %}
+{% block content %}
+<h1>Alterar Senha</h1>
+
+<form method="post" class="row g-3 mt-4">
+  <div class="col-md-4">
+    <label for="senha_atual" class="form-label">Senha Atual</label>
+    <input type="password" class="form-control" id="senha_atual" name="senha_atual" required>
+  </div>
+
+  <div class="col-md-4">
+    <label for="nova_senha" class="form-label">Nova Senha</label>
+    <input type="password" class="form-control" id="nova_senha" name="nova_senha" required>
+  </div>
+
+  <div class="col-md-4 d-flex align-items-end">
+    <button type="submit" class="btn btn-primary w-100">Alterar</button>
+  </div>
+</form>
+
+<a href="{{ url_for('index') }}" class="btn btn-secondary mt-3">Voltar</a>
+{% endblock %}
